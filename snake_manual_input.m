@@ -36,21 +36,58 @@ function [x, y] = snake_manual_input(f, np, style)
 %   function is black dots with no lines.
 
 disp(' ')
-disp('PRESS ANY KEY TO BEGIN DATA ENTRY. SELECT POINTS WITH THE MOUSE.')
-disp('PRESS RETURN TO TERMINATE DATA ENTRY.')
+disp('Press any key to begin data entry, Enter points with Mouse 1')
+disp(' ')
+disp('Press Delete/Backspace tp delete the last data point entered')
+disp('Press return to stop data entry without adding a final point.')
+disp('Use Mouse 2, Mouse 3 or a Double Click to enter a final point and stop data entry.')
 disp(' ')
 pause;
 figure, imshow(f)
+hold on;
 
 % Get points interactively. Function myginput is a 3rd-party
 % function included in the book support package.
-[c, r] = myginput; 
+getData = 1;
+firstRun = 1;
+validData = 1;
+while getData
+    if(~firstRun)
+        waitfor(warndlg('Please enter atleast 2 data points!','Data Points'));
+    end
+    if(~validData)
+        waitfor(warndlg('Please enter atleast 2 unique data points!','Data Points'));
+        validData = 1;
+    end
+    [c,r] = getpts;
+    firstRun = 0;
+    %not sure about this but might as well add error checking
+    %if the person only inputs 2 data points and they're the same
+    %it will break the interparc function
+    if(numel(c) == 2)
+        if((c(1) == c(2)) && (r(1) == r(2)))
+            validData = 0;
+            firstRun = 1;
+        end
+    end
+    
+    if(numel(c) > 1 && validData)
+        getData = 0;
+    end
+end    
 x = r;
 y = c;
 
 % Add one more point to close the snake.
-x(numel(x) + 1) = x(1);
-y(numel(y) + 1) = y(1);
+
+%Maybe don't do this if the user somehow clicks the same point for the
+%first and last data point.
+if((x(1) ~= x(numel(x)) && y(1) ~= y(numel(y))))
+    x(numel(x) + 1) = x(1);
+    y(numel(y) + 1) = y(1);
+end
+
+
 
 % Interpolate to get np, equally spaced (in terms of arc distance)
 % points. Note the order in which x and y are input. Function
@@ -62,11 +99,8 @@ p = interparc(np, y, x, 'linear');
 x = p(:,2); 
 y = p(:,1);
 
-% Close the current figure.
-close gcf
-
-% Display the figure with the snake supoperimposed on it.
-figure, imshow(f)
-hold on
+% Display the snake, image is still in figure
 plot(y, x, style)
 hold off
+
+
